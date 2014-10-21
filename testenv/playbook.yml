@@ -1,15 +1,4 @@
 ---
 
-- hosts: mesos_masters
-  vars:
-    marathon_version: 0.7.3-1.0
-    mesos_version: 0.20.1-1.0.ubuntu1404
-  roles:
-    - mesos-master
-    - mesosphere-marathon
-
-- hosts: mesos_slaves
-  vars:
-      mesos_version: 0.20.1-1.0.ubuntu1404
-  roles:
-    - mesos-slave
+- include: mesos-cluster.yml
+- include: docker-registry.yml

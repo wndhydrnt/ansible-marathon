@@ -1,10 +1,5 @@
 ---
 
-- name: set containerizers
-  template: src=containerizers.j2 dest=/etc/mesos-slave/containerizers
-  notify:
-  - restart slave
-
 - name: prevent zookeeper process from starting
   template: src=zookeeper.override.j2 dest=/etc/init/zookeeper.override
 
@@ -32,18 +27,15 @@
   notify:
   - restart slave
 
-# - name: set additional mesos attributes
-#   template: src=attributes.j2 dest=/etc/mesos-slave/attributes
-#   notify:
-#   - restart slave
-
-- name: set the log level
-  template: src=log_level.j2 dest=/etc/mesos-slave/logging_level
+- name: write mesos slave settings
+  template: src=config.j2 dest=/etc/mesos-slave/{{ item.key }}
+  with_dict: slave_config
   notify:
   - restart slave
 
-- name: set executor registration timeout
-  template: src=executor_registration_timeout.j2 dest=/etc/mesos-slave/executor_registration_timeout
+- name: write mesos slave attributes
+  template: src=attributes.j2 dest=/etc/mesos-slave/attributes.j2
+  when: slave_attributes is defined
   notify:
   - restart slave
 

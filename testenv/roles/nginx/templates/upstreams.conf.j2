@@ -1,8 +1,0 @@
-{% for application in nginx_applications %}
-upstream {{ application.name }} {
-  {% for server in application.servers %}
-  server {{ server.host }}:{{ server.port }};
-  {% endfor %}
-}
-
-{% endfor  %}

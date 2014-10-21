@@ -1,6 +1,0 @@
----
-
-- hosts: all
-  roles:
-    - docker-registry
-    - mesos-master
