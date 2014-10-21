@@ -1,0 +1,35 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+MASTER_COUNT = 1
+SLAVE_COUNT = 2
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.box = "ubuntu/trusty64"
+
+  MASTER_COUNT.times do |master_number|
+    config.vm.define "master#{master_number}" do |master|
+      master.vm.hostname = "master#{master_number}"
+      master.vm.network 'private_network', ip: "10.10.7.1#{master_number}"
+
+      master.vm.provider "virtualbox" do |v|
+        v.memory = 1024
+        v.cpus = 2
+      end
+    end
+  end
+
+  SLAVE_COUNT.times do |slave_number|
+    config.vm.define "slave#{slave_number}" do |slave|
+      slave.vm.hostname = "slave#{slave_number}"
+      slave.vm.network 'private_network', ip: "10.10.7.10#{slave_number}"
+
+      slave.vm.provider "virtualbox" do |v|
+        v.memory = 2048
+        v.cpus = 2
+      end
+    end
+  end
+end

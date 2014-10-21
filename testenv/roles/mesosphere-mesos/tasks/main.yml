@@ -1,0 +1,4 @@
+---
+
+- name: install mesos {{ mesos_version }}
+  apt: name=mesos={{ mesos_version }} state=present update_cache=yes

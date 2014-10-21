@@ -1,0 +1,5 @@
+[docker]
+host: ["unix:///var/run/docker.sock"]
+
+[containers.options]
+append: ["-e", "PUBLIC_IP={{ hostvars[inventory_hostname]['ansible_' + external_iface]['ipv4']['address'] }}"]

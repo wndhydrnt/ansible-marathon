@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  author: Geoffrey Ragot
+  description: Install Docker
+  company: BHMInc
+  license: MIT
+  
+  platforms:
+    - name: Ubuntu
+      versions:
+        - 14.04
+        
+  categories:
+    - system

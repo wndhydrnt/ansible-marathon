@@ -1,0 +1,6 @@
+---
+
+- name: install marathon
+  apt: name=marathon={{ marathon_version }} state=present update_cache=yes
+  notify:
+  - restart marathon

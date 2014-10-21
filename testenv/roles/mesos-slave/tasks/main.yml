@@ -1,0 +1,51 @@
+---
+
+- name: set containerizers
+  template: src=containerizers.j2 dest=/etc/mesos-slave/containerizers
+  notify:
+  - restart slave
+
+- name: prevent zookeeper process from starting
+  template: src=zookeeper.override.j2 dest=/etc/init/zookeeper.override
+
+- name: stop zookeeper
+  service: name=zookeeper state=stopped
+
+- name: prevent mesos master process from starting
+  template: src=mesos-master.override.j2 dest=/etc/init/mesos-master.override
+
+- name: stop mesos master
+  service: name=mesos-master state=stopped
+
+- name: set ip of zookeeper
+  template: src=zk.j2 dest=/etc/mesos/zk
+  notify:
+  - restart slave
+
+- name: set the hostname the slave advertises
+  template: src=hostname.j2 dest=/etc/mesos-slave/hostname
+  notify:
+  - restart slave
+
+- name: set the ip the slave will listen on
+  template: src=ip.j2 dest=/etc/mesos-slave/ip
+  notify:
+  - restart slave
+
+# - name: set additional mesos attributes
+#   template: src=attributes.j2 dest=/etc/mesos-slave/attributes
+#   notify:
+#   - restart slave
+
+- name: set the log level
+  template: src=log_level.j2 dest=/etc/mesos-slave/logging_level
+  notify:
+  - restart slave
+
+- name: set executor registration timeout
+  template: src=executor_registration_timeout.j2 dest=/etc/mesos-slave/executor_registration_timeout
+  notify:
+  - restart slave
+
+- name: ensure that the slave is started
+  service: name=mesos-slave state=started
