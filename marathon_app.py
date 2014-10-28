@@ -312,7 +312,7 @@ def main():
             memory=dict(default=256.0, type="float"),
             name=dict(required=True, type="str"),
             state=dict(default="present", choices=["absent", "present"], type="str"),
-            wait=dict(default="yes", type="bool"),
+            wait=dict(default="yes", choices=BOOLEANS, type="bool"),
             wait_timeout=dict(default=300, type="int")
         )
     )
