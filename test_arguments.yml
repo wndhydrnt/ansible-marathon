@@ -1,0 +1,20 @@
+---
+
+state: present
+name: docker-registry
+host: http://10.10.7.10:8080
+memory: 128.0
+instances: 1
+cpus: 0.1
+container:
+  type: DOCKER
+  docker:
+    image: "registry:0.8.1"
+    network: BRIDGE
+    portMappings:
+      - { containerPort: 5000, hostPort: 0, protocol: tcp }
+env:
+  SETTINGS_FLAVOR: local
+  SEARCH_BACKEND: sqlalchemy
+# health_checks:
+#   - { protocol: HTTP, path: '/v1/_ping', gracePeriodSeconds: 3, intervalSeconds: 10, portIndex: 0, timeoutSeconds: 10, maxConsecutiveFailures: 3 }
