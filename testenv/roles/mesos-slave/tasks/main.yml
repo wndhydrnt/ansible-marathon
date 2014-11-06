@@ -33,8 +33,13 @@
   notify:
   - restart slave
 
+- name: create mesos slave attributes directory
+  file: state=directory path=/etc/mesos-slave/attributes
+  when: slave_attributes is defined
+
 - name: write mesos slave attributes
-  template: src=attributes.j2 dest=/etc/mesos-slave/attributes.j2
+  template: src=attributes.j2 dest=/etc/mesos-slave/attributes/{{ item.key }}
+  with_dict: slave_attributes
   when: slave_attributes is defined
   notify:
   - restart slave

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import json
+from marathon.models.constraint import MarathonConstraint
 
 DOCUMENTATION = """
 ---
@@ -19,6 +20,12 @@ options:
     description:
       - Set the command to execute in a container.
     required: False
+    default: null
+    aliases: []
+  constraints:
+    description:
+      - Control where apps run.
+    required: false
     default: null
     aliases: []
   container:
@@ -143,6 +150,7 @@ class Marathon(object):
 
     def create(self):
         new_app = MarathonApp(cmd=self._module.params["command"],
+                              constraints=self._module.params["constraints"],
                               container=self._module.params["container"],
                               cpus=self._module.params["cpus"],
                               env=self._module.params["env"],
@@ -203,6 +211,14 @@ class Marathon(object):
         for k, vol in enumerate(app.container.volumes):
             if vol.to_json() != new_container.volumes[k].to_json():
                 return True
+        # Convert to arrays-in-array for easier comparison
+        app_constraints = [c.json_repr() for c in app.constraints]
+        if self._module.params["constraints"] is None:
+            module_constraints = []
+        else:
+            module_constraints = self._module.params["constraints"]
+        if module_constraints != app_constraints:
+            return True
 
         return False
 
@@ -240,6 +256,9 @@ class Marathon(object):
         app.mem = self._module.params["memory"]
 
         app.container = self._container_from_module()
+
+        app.constraints = [MarathonConstraint(*c)
+                           for c in (self._module.params["constraints"] or [])]
 
         self._client.update_app(self._module.params["name"], app)
 
@@ -305,6 +324,7 @@ def main():
         argument_spec=dict(
             cpus=dict(default=1.0, type="float"),
             command=dict(default=None, type="str"),
+            constraints=dict(default=None, type="list"),
             container=dict(default=None, type="dict"),
             env=dict(default=dict(), type="dict"),
             host=dict(default="http://localhost:8080", type="str"),

@@ -17,5 +17,7 @@
         containerizers: 'docker,mesos'
         executor_registration_timeout: '5mins'
         logging_level: 'ERROR'
+      slave_attributes:
+        location: "{{ hostvars[inventory_hostname]['instance_id'] }}"
   roles:
     - mesos-slave
