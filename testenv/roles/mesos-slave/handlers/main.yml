@@ -1,4 +1,0 @@
----
-
-- name: restart slave
-  service: name=mesos-slave state=restarted

@@ -1,5 +1,0 @@
----
-
-dependencies:
-  - { role: mesosphere-mesos }
-  - { role: docker }
