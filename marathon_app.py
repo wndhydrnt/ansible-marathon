@@ -149,7 +149,8 @@ class Marathon(object):
         self._module = module
 
     def create(self):
-        new_app = MarathonApp(cmd=self._module.params["command"],
+        new_app = MarathonApp(args=self._module.params["args"],
+                              cmd=self._module.params["command"],
                               constraints=self._module.params["constraints"],
                               container=self._module.params["container"],
                               cpus=self._module.params["cpus"],
@@ -190,7 +191,8 @@ class Marathon(object):
     def needs_update(self):
         app = self._retrieve_app()
 
-        if (app.cmd != self._module.params["command"]
+        if (app.args != self._module.params["args"]
+                or app.cmd != self._module.params["command"]
                 or app.cpus != self._module.params["cpus"]
                 or app.env != self._module.params["env"]
                 or app.instances != self._module.params["instances"]
@@ -249,6 +251,7 @@ class Marathon(object):
         # during update. This leads to the update not being applied.
         app.version = None
 
+        app.args = self._module.params["args"]
         app.cmd = self._module.params["command"]
         app.cpus = self._module.params["cpus"]
         app.env = self._module.params["env"]
@@ -322,6 +325,7 @@ def main():
 
     module = AnsibleModule(
         argument_spec=dict(
+            args=dict(default=None, type="list"),
             cpus=dict(default=1.0, type="float"),
             command=dict(default=None, type="str"),
             constraints=dict(default=None, type="list"),
@@ -334,7 +338,8 @@ def main():
             state=dict(default="present", choices=["absent", "present"], type="str"),
             wait=dict(default="yes", choices=BOOLEANS, type="bool"),
             wait_timeout=dict(default=300, type="int")
-        )
+        ),
+        mutually_exclusive=(["args", "cmd"],)
     )
 
     if HAS_MARATHON_PACKAGE is False:

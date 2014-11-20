@@ -4,33 +4,56 @@
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 
-MASTER_COUNT = 1
-SLAVE_COUNT = 2
+$script = <<SCRIPT
+# Setup
+apt-key adv --keyserver keyserver.ubuntu.com --recv E56151BF
+apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9
+
+DISTRO=$(lsb_release -is | tr '[:upper:]' '[:lower:]')
+CODENAME=$(lsb_release -cs)
+
+# Add the repository
+echo "deb http://repos.mesosphere.io/${DISTRO} ${CODENAME} main" | \
+  tee /etc/apt/sources.list.d/mesosphere.list
+echo "deb https://get.docker.com/ubuntu docker main" > /etc/apt/sources.list.d/docker.list
+apt-get -y update
+
+apt-get -y install apt-transport-https lxc-docker
+
+apt-get -y install mesos=0.20.1-1.0.ubuntu1404
+
+echo "10.10.7.10" > /etc/mesos-master/ip
+
+echo "docker,mesos" > /etc/mesos-slave/containerizers
+echo "5mins" > /etc/mesos-slave/executor_registration_timeout
+echo "ERROR" > /etc/mesos-slave/logging_level
+echo "10.10.7.10" > /etc/mesos-slave/hostname
+echo "10.10.7.10" > /etc/mesos-slave/ip
+
+apt-get -y install marathon=0.7.5-1.0
+
+mkdir -p /etc/marathon/conf
+
+echo "300000" > /etc/marathon/conf/task_launch_timeout
+
+service zookeeper restart
+service mesos-master restart
+service mesos-slave restart
+service marathon restart
+
+SCRIPT
+
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = "ubuntu/trusty64"
 
-  MASTER_COUNT.times do |master_number|
-    config.vm.define "master#{master_number}" do |master|
-      master.vm.hostname = "master#{master_number}"
-      master.vm.network 'private_network', ip: "10.10.7.1#{master_number}"
+  config.vm.hostname = "mesos"
+  config.vm.network 'private_network', ip: "10.10.7.10"
 
-      master.vm.provider "virtualbox" do |v|
-        v.memory = 1024
-        v.cpus = 1
-      end
-    end
-  end
+  config.vm.provision "shell", inline: $script
 
-  SLAVE_COUNT.times do |slave_number|
-    config.vm.define "slave#{slave_number}" do |slave|
-      slave.vm.hostname = "slave#{slave_number}"
-      slave.vm.network 'private_network', ip: "10.10.7.10#{slave_number}"
-
-      slave.vm.provider "virtualbox" do |v|
-        v.memory = 1024
-        v.cpus = 2
-      end
-    end
+  config.vm.provider "virtualbox" do |v|
+    v.memory = 3072
+    v.cpus = 2
   end
 end

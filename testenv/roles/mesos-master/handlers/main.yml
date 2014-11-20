@@ -1,7 +1,0 @@
----
-
-- name: restart master
-  service: name=mesos-master state=restarted
-
-- name: restart zookeeper
-  service: name=zookeeper state=restarted

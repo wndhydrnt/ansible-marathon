@@ -1,4 +1,0 @@
----
-
-- include: mesos-cluster.yml
-- include: docker-registry.yml

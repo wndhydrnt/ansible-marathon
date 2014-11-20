@@ -1,7 +1,0 @@
----
-
-- name: add mesosphere repository key
-  apt_key: keyserver=hkp://keyserver.ubuntu.com:80 id=E56151BF state=present
-
-- name: add mesosphere apt repository
-  apt_repository: repo='deb http://repos.mesosphere.io/ubuntu trusty main' state=present
