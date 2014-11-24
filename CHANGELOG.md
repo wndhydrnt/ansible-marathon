@@ -1,5 +1,11 @@
 # Changelog
 
+## 2014-11-24
+
+* Treat an empty string as 'not set' for command parameter
+* Fix infinite loop when updating an application on Marathon 0.7.5
+* Increase wait before checking deployment status
+
 ## 2014-11-20
 
 * Add support for 'args' parameter
