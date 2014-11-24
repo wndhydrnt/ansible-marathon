@@ -276,7 +276,7 @@ class Marathon(object):
         timeout = int(time.time()) + self._module.params["wait_timeout"]
 
         while int(time.time()) < timeout:
-            time.sleep(1)
+            time.sleep(5)
             app = self._retrieve_app()
             # Make sure all tasks are running
             if (previous_version != app.version
