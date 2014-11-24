@@ -203,8 +203,8 @@ class Marathon(object):
         if app.container.type != new_container.type:
             return True
 
-        if app.container.docker.to_json() != new_container.docker\
-                .to_json():
+        if self._docker_container_changed(app.container.docker,
+                                          new_container.docker):
             return True
 
         if len(app.container.volumes) != len(new_container.volumes):
@@ -311,6 +311,36 @@ class Marathon(object):
                 pm.service_port = 0
 
         return c
+
+    def _docker_container_changed(self, app, module):
+        if app.image != module.image:
+            return True
+
+        if app.network != module.network:
+            return True
+
+        if len(app.port_mappings) != len(module.port_mappings):
+            return True
+
+        found = 0
+
+        for pm_module in module.port_mappings:
+            for pm_app in app.port_mappings:
+                service_port_equal = True
+
+                if (pm_module.service_port != 0 and pm_module.service_port != pm_app.service_port):
+                    service_port_equal = False
+
+                if (service_port_equal
+                        and pm_module.container_port == pm_app.container_port
+                        and pm_module.host_port == pm_app.host_port
+                        and pm_module.protocol == pm_app.protocol):
+                    found += 1
+
+        if found != len(module.port_mappings):
+            return True
+
+        return False
 
     def _retrieve_app(self):
         try:
