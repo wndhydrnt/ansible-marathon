@@ -150,7 +150,7 @@ class Marathon(object):
 
     def create(self):
         new_app = MarathonApp(args=self._module.params["args"],
-                              cmd=self._module.params["command"],
+                              cmd=self._sanitize_command(),
                               constraints=self._module.params["constraints"],
                               container=self._module.params["container"],
                               cpus=self._module.params["cpus"],
@@ -192,7 +192,7 @@ class Marathon(object):
         app = self._retrieve_app()
 
         if (app.args != self._module.params["args"]
-                or app.cmd != self._module.params["command"]
+                or app.cmd != self._sanitize_command()
                 or app.cpus != self._module.params["cpus"]
                 or app.env != self._module.params["env"]
                 or app.instances != self._module.params["instances"]
@@ -317,6 +317,11 @@ class Marathon(object):
             return self._client.get_app(self._module.params["name"])
         except MarathonHttpError:
             raise UnknownAppError
+
+    def _sanitize_command(self):
+        if self._module.params["command"]:
+            return self._module.params["command"]
+        return None
 
 
 def main():
