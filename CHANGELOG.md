@@ -2,6 +2,7 @@
 
 ## 2014-12-12
 
+* Fix error when value of an environment variable is an integer
 * Fix 'args' being recognized as updated on subsequent requests
 
 ## 2014-11-24

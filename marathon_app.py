@@ -198,7 +198,7 @@ class Marathon(object):
         if (args_update
                 or app.cmd != self._sanitize_command()
                 or app.cpus != self._module.params["cpus"]
-                or app.env != self._module.params["env"]
+                or app.env != self._sanitize_env()
                 or app.instances != self._module.params["instances"]
                 or app.mem != self._module.params["memory"]):
             return True
@@ -258,7 +258,7 @@ class Marathon(object):
         app.args = self._module.params["args"]
         app.cmd = self._module.params["command"]
         app.cpus = self._module.params["cpus"]
-        app.env = self._module.params["env"]
+        app.env = self._sanitize_env()
         app.instances = self._module.params["instances"]
         app.mem = self._module.params["memory"]
 
@@ -356,6 +356,15 @@ class Marathon(object):
         if self._module.params["command"]:
             return self._module.params["command"]
         return None
+
+    def _sanitize_env(self):
+        env = self._module.params["env"]
+
+        for env_key in env:
+            if isinstance(env[env_key], str) is False:
+                env[env_key] = str(env[env_key])
+
+        return env
 
 
 def main():

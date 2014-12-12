@@ -16,6 +16,7 @@ container:
 env:
   SETTINGS_FLAVOR: local
   SEARCH_BACKEND: sqlalchemy
+  TEST_INT: 5555
 # constraints:
 #  - ['location', 'CLUSTER', 'i-abc123']
 # health_checks:
