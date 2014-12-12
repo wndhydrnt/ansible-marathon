@@ -1,5 +1,9 @@
 # Changelog
 
+## 2014-12-12
+
+* Fix 'args' being recognized as updated on subsequent requests
+
 ## 2014-11-24
 
 * Treat an empty string as 'not set' for command parameter

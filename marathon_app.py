@@ -191,7 +191,11 @@ class Marathon(object):
     def needs_update(self):
         app = self._retrieve_app()
 
-        if (app.args != self._module.params["args"]
+        args_update = ((app.args != []
+                        or self._module.params["args"] is not None)
+                       and app.args != self._module.params["args"])
+
+        if (args_update
                 or app.cmd != self._sanitize_command()
                 or app.cpus != self._module.params["cpus"]
                 or app.env != self._module.params["env"]
