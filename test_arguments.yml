@@ -19,5 +19,11 @@ env:
   TEST_INT: 5555
 # constraints:
 #  - ['location', 'CLUSTER', 'i-abc123']
-# health_checks:
-#   - { protocol: HTTP, path: '/v1/_ping', gracePeriodSeconds: 3, intervalSeconds: 10, portIndex: 0, timeoutSeconds: 10, maxConsecutiveFailures: 3 }
+health_checks:
+  - protocol: HTTP
+    path: '/v1/_ping'
+    gracePeriodSeconds: 3
+    intervalSeconds: 20
+    portIndex: 0
+    timeoutSeconds: 10
+    maxConsecutiveFailures: 3

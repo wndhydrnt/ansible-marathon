@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import json
+from marathon.models.app import MarathonHealthCheck
 from marathon.models.constraint import MarathonConstraint
 
 DOCUMENTATION = """
@@ -155,6 +156,7 @@ class Marathon(object):
                               container=self._module.params["container"],
                               cpus=self._module.params["cpus"],
                               env=self._module.params["env"],
+                              health_checks=self._module.params["health_checks"],
                               instances=self._module.params["instances"],
                               mem=self._module.params["memory"])
 
@@ -226,6 +228,17 @@ class Marathon(object):
         if module_constraints != app_constraints:
             return True
 
+        app_health_checks = [hc.json_repr() for hc in app.health_checks]
+
+        if self._module.params["health_checks"] is None:
+            module_health_checks = []
+        else:
+            module_health_checks = [MarathonHealthCheck.from_json(hc).json_repr()
+                                    for hc in self._module.params["health_checks"]]
+
+        if app_health_checks != module_health_checks:
+            return True
+
         return False
 
     def sync(self):
@@ -251,10 +264,6 @@ class Marathon(object):
 
         previous_version = app.version
 
-        # Work around a bug in marathon package where the version key is sent
-        # during update. This leads to the update not being applied.
-        app.version = None
-
         app.args = self._module.params["args"]
         app.cmd = self._module.params["command"]
         app.cpus = self._module.params["cpus"]
@@ -266,6 +275,9 @@ class Marathon(object):
 
         app.constraints = [MarathonConstraint(*c)
                            for c in (self._module.params["constraints"] or [])]
+
+        app.health_checks = [MarathonHealthCheck.from_json(hc)
+                             for hc in (self._module.params["health_checks"] or [])]
 
         self._client.update_app(self._module.params["name"], app)
 
@@ -379,6 +391,7 @@ def main():
             constraints=dict(default=None, type="list"),
             container=dict(default=None, type="dict"),
             env=dict(default=dict(), type="dict"),
+            health_checks=dict(default=None, type="list"),
             host=dict(default="http://localhost:8080", type="str"),
             instances=dict(default=1, type="int"),
             memory=dict(default=256.0, type="float"),

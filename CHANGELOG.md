@@ -1,5 +1,9 @@
 # Changelog
 
+## 2015-02-09
+
+* Support creating and updating 'healthChecks'
+
 ## 2014-12-12
 
 * Fix error when value of an environment variable is an integer
