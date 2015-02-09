@@ -20,7 +20,7 @@ apt-get -y update
 
 apt-get -y install apt-transport-https lxc-docker
 
-apt-get -y install mesos=0.20.1-1.0.ubuntu1404
+apt-get -y install mesos=0.21.1-1.1.ubuntu1404
 
 echo "10.10.7.10" > /etc/mesos-master/ip
 
@@ -30,7 +30,7 @@ echo "ERROR" > /etc/mesos-slave/logging_level
 echo "10.10.7.10" > /etc/mesos-slave/hostname
 echo "10.10.7.10" > /etc/mesos-slave/ip
 
-apt-get -y install marathon=0.7.6-1.0
+apt-get -y install marathon=0.8.0-1.1.97.ubuntu1404
 
 mkdir -p /etc/marathon/conf
 
