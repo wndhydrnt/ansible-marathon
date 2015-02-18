@@ -3,6 +3,9 @@
 state: present
 name: docker-registry
 host: http://10.10.7.10:8080
+backoff_factor: 2.0
+backoff_seconds: 10
+max_launch_delay_seconds: 60
 memory: 128.0
 instances: 1
 cpus: 0.1

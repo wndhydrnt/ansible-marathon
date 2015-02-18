@@ -150,6 +150,8 @@ class Marathon(object):
 
     def create(self):
         new_app = MarathonApp(args=self._module.params["args"],
+                              backoff_factor=self._module.params["backoff_factor"],
+                              backoff_seconds=self._module.params["backoff_seconds"],
                               cmd=self._sanitize_command(),
                               constraints=self._module.params["constraints"],
                               container=self._module.params["container"],
@@ -196,10 +198,13 @@ class Marathon(object):
                        and app.args != self._module.params["args"])
 
         if (args_update
+                or app.backoff_factor != self._module.params["backoff_factor"]
+                or app.backoff_seconds != self._module.params["backoff_seconds"]
                 or app.cmd != self._sanitize_command()
                 or app.cpus != self._module.params["cpus"]
                 or app.env != self._sanitize_env()
                 or app.instances != self._module.params["instances"]
+                or app.max_launch_delay_seconds != self._module.params["max_launch_delay_seconds"]
                 or app.mem != self._module.params["memory"]):
             return True
 
@@ -256,10 +261,13 @@ class Marathon(object):
         app.version = None
 
         app.args = self._module.params["args"]
+        app.backoff_factor = self._module.params["backoff_factor"]
+        app.backoff_seconds = self._module.params["backoff_seconds"]
         app.cmd = self._module.params["command"]
         app.cpus = self._module.params["cpus"]
         app.env = self._sanitize_env()
         app.instances = self._module.params["instances"]
+        app.max_launch_delay_seconds = self._module.params["max_launch_delay_seconds"]
         app.mem = self._module.params["memory"]
 
         app.container = self._container_from_module()
@@ -347,6 +355,9 @@ class Marathon(object):
         return False
 
     def _retrieve_app(self):
+        """
+        :rtype: :class:`marathon.models.app.MarathonApp`
+        """
         try:
             return self._client.get_app(self._module.params["name"])
         except MarathonHttpError:
@@ -374,6 +385,8 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             args=dict(default=None, type="list"),
+            backoff_factor=dict(default=1, type="float"),
+            backoff_seconds=dict(default=1, type="int"),
             cpus=dict(default=1.0, type="float"),
             command=dict(default=None, type="str"),
             constraints=dict(default=None, type="list"),
@@ -381,6 +394,7 @@ def main():
             env=dict(default=dict(), type="dict"),
             host=dict(default="http://localhost:8080", type="str"),
             instances=dict(default=1, type="int"),
+            max_launch_delay_seconds=dict(default=None, type="int"),
             memory=dict(default=256.0, type="float"),
             name=dict(required=True, type="str"),
             state=dict(default="present", choices=["absent", "present"], type="str"),
@@ -391,7 +405,7 @@ def main():
     )
 
     if HAS_MARATHON_PACKAGE is False:
-        module.fail_json("The Ansible Marathon App module requires `marathon` >= 0.6.3")
+        module.fail_json("The Ansible Marathon App module requires `marathon` >= 0.6.10")
 
     try:
         marathon_client = MarathonClient(module.params['host'])
