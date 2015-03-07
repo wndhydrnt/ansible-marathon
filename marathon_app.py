@@ -46,6 +46,12 @@ options:
     required: False
     default: dict
     aliases: []
+  health_checks:
+    description:
+      - A list of health checks that Marathon should execute
+    required: False
+    default: list
+    aliases: []
   host:
     description:
       - Set the URL to a Marathon host.
@@ -185,6 +191,7 @@ class Marathon(object):
                 or app["cmd"] != self._sanitize_command()
                 or app["cpus"] != self._module.params["cpus"]
                 or app["env"] != self._sanitize_env()
+                or app["healthChecks"] != self._module.params["health_checks"]
                 or app["instances"] != self._module.params["instances"]
                 or app["mem"] != self._module.params["memory"]):
             return True
@@ -351,6 +358,7 @@ class Marathon(object):
             "cpus": self._module.params["cpus"],
             "id": self._id(),
             "env": self._sanitize_env(),
+            "healthChecks": self._module.params["health_checks"],
             "instances": self._module.params["instances"],
             "mem": self._module.params["memory"]
         }
@@ -375,6 +383,7 @@ def main():
             constraints=dict(default=None, type="list"),
             container=dict(default=None, type="dict"),
             env=dict(default=dict(), type="dict"),
+            health_checks=dict(default=list(), type="list"),
             host=dict(default="http://localhost:8080", type="str"),
             instances=dict(default=1, type="int"),
             memory=dict(default=256.0, type="float"),
