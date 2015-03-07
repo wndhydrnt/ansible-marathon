@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 import json
-from marathon.models.constraint import MarathonConstraint
+import time
+import requests
+from requests.exceptions import HTTPError
 
 DOCUMENTATION = """
 ---
@@ -10,6 +13,9 @@ short_description: manage marathon apps
 description:
   - Create, update or delete an app via the Marathon API.
 options:
+  args:
+    description:
+      - List of arguments passed to a task
   cpus:
     description:
       - Set number of CPUs to allocate for one container
@@ -86,23 +92,26 @@ options:
 EXAMPLES = """
 # Run a command in a container (note that the execution is delegated to localhost):
 
-- hosts: mesos_masters
+- hosts: localhost
+  gather_facts: no
+  sudo: no
   tasks:
-    - marathon_app: >
-        state=present
-        name=/simple_app
-        host=http://marathon.example.com:8080
-        memory=16.0
-        instances=1
-        command=env && sleep 300
-      delegate_to: 127.0.0.1
+    - marathon_app:
+        state: present
+        name: /simple_app
+        host: http://marathon.example.com:8080
+        memory: 16.0
+        instances: 1
+        command: env && sleep 300
       register: marathon
 
     - debug: var=marathon
 
 # Run the Docker Registry inside a docker container and expose its HTTP port:
 
-- hosts: mesos_masters
+- hosts: localhost
+  gather_facts: no
+  sudo: no
   tasks:
     - marathon_app:
         state: present
@@ -120,19 +129,7 @@ EXAMPLES = """
         env:
           SETTINGS_FLAVOR: local
           SEARCH_BACKEND: sqlalchemy
-      delegate_to: 127.0.0.1
 """
-
-HAS_MARATHON_PACKAGE = True
-
-try:
-    from marathon import log as marathon_logger
-    from marathon.client import MarathonClient
-    from marathon.exceptions import MarathonError, MarathonHttpError
-    from marathon.models import MarathonApp
-    from marathon.models.container import MarathonContainer
-except ImportError:
-    HAS_MARATHON_PACKAGE = False
 
 
 class TimeoutError(Exception):
@@ -144,28 +141,21 @@ class UnknownAppError(Exception):
 
 
 class Marathon(object):
-    def __init__(self, client, module):
-        self._client = client
+    def __init__(self, module):
         self._module = module
 
     def create(self):
-        new_app = MarathonApp(args=self._module.params["args"],
-                              cmd=self._sanitize_command(),
-                              constraints=self._module.params["constraints"],
-                              container=self._module.params["container"],
-                              cpus=self._module.params["cpus"],
-                              env=self._module.params["env"],
-                              instances=self._module.params["instances"],
-                              mem=self._module.params["memory"])
+        url = "{0}/v2/apps".format(self._module.params["host"])
 
-        self._client.create_app(self._module.params["name"], new_app)
+        rep = requests.post(url, data=json.dumps(self._updated_data()),
+                            headers={"Content-Type": "application/json"})
+        rep.raise_for_status()
 
         self._check_deployment()
 
-        self._module.exit_json(app=self.gather_facts(), changed=True)
-
     def delete(self):
-        self._client.delete_app(self._module.params["name"])
+        rep = requests.delete(self._url())
+        rep.raise_for_status()
 
     def exists(self):
         try:
@@ -178,100 +168,78 @@ class Marathon(object):
     def gather_facts(self):
         app = self._retrieve_app()
 
-        namespaces = app.id.split("/")
+        namespaces = app["id"].split("/")
         # First item in the list empty due to "id" starting with "/"
         del namespaces[0]
 
-        # Best way to convert the object to a dict
-        data = json.loads(app.to_json())
-        data["namespaces"] = namespaces
+        app["namespaces"] = namespaces
 
-        return data
+        return app
 
-    def needs_update(self):
-        app = self._retrieve_app()
-
-        args_update = ((app.args != []
+    def needs_update(self, app):
+        args_update = ((app["args"] != []
                         or self._module.params["args"] is not None)
-                       and app.args != self._module.params["args"])
+                       and app["args"] != self._module.params["args"])
 
         if (args_update
-                or app.cmd != self._sanitize_command()
-                or app.cpus != self._module.params["cpus"]
-                or app.env != self._sanitize_env()
-                or app.instances != self._module.params["instances"]
-                or app.mem != self._module.params["memory"]):
+                or app["cmd"] != self._sanitize_command()
+                or app["cpus"] != self._module.params["cpus"]
+                or app["env"] != self._sanitize_env()
+                or app["instances"] != self._module.params["instances"]
+                or app["mem"] != self._module.params["memory"]):
             return True
 
         new_container = self._container_from_module()
-        if app.container.type != new_container.type:
+        if app["container"]["type"] != new_container["type"]:
             return True
 
-        if self._docker_container_changed(app.container.docker,
-                                          new_container.docker):
+        if self._docker_container_changed(app["container"]["docker"],
+                                          new_container["docker"]):
             return True
 
-        if len(app.container.volumes) != len(new_container.volumes):
+        if app["container"]["volumes"] != new_container["volumes"]:
             return True
 
-        for k, vol in enumerate(app.container.volumes):
-            if vol.to_json() != new_container.volumes[k].to_json():
-                return True
-        # Convert to arrays-in-array for easier comparison
-        app_constraints = [c.json_repr() for c in app.constraints]
         if self._module.params["constraints"] is None:
             module_constraints = []
         else:
             module_constraints = self._module.params["constraints"]
-        if module_constraints != app_constraints:
+        if module_constraints != app["constraints"]:
             return True
 
         return False
 
     def sync(self):
         if self._module.params["state"] == "present":
-            if self.exists():
-                if self.needs_update():
-                    self.update()
+            try:
+                app = self._retrieve_app()
+                if self.needs_update(app):
+                    self.update(app)
+                    self._module.exit_json(app=self.gather_facts(),
+                                           changed=True)
                 else:
                     self._module.exit_json(app=self.gather_facts(),
                                            changed=False)
-            else:
+            except HTTPError:
                 self.create()
+                self._module.exit_json(app=self.gather_facts(), changed=True)
 
         if self._module.params["state"] == "absent":
-            if self.exists():
+            try:
+                self._retrieve_app()
                 self.delete()
                 self._module.exit_json(changed=True)
-            else:
+            except HTTPError:
                 self._module.exit_json(changed=False)
 
-    def update(self):
-        app = self._retrieve_app()
+    def update(self, app):
+        previous_version = app["version"]
 
-        previous_version = app.version
-
-        # Work around a bug in marathon package where the version key is sent
-        # during update. This leads to the update not being applied.
-        app.version = None
-
-        app.args = self._module.params["args"]
-        app.cmd = self._module.params["command"]
-        app.cpus = self._module.params["cpus"]
-        app.env = self._sanitize_env()
-        app.instances = self._module.params["instances"]
-        app.mem = self._module.params["memory"]
-
-        app.container = self._container_from_module()
-
-        app.constraints = [MarathonConstraint(*c)
-                           for c in (self._module.params["constraints"] or [])]
-
-        self._client.update_app(self._module.params["name"], app)
+        rep = requests.put(self._url(), data=json.dumps(self._updated_data()),
+                           headers={"Content-Type": "application/json"})
+        rep.raise_for_status()
 
         self._check_deployment(previous_version)
-
-        self._module.exit_json(app=self.gather_facts(), changed=True)
 
     def _check_deployment(self, previous_version=None):
         if self._module.params["wait"] is False:
@@ -283,74 +251,82 @@ class Marathon(object):
             time.sleep(5)
             app = self._retrieve_app()
             # Make sure all tasks are running
-            if (previous_version != app.version
-                    and app.tasks_running == self._module.params["instances"]
-                    and app.tasks_staged == 0):
+            if (previous_version != app["version"]
+                    and app["tasksRunning"] == self._module.params["instances"]
+                    and app["tasksStaged"] == 0):
                 return
 
         raise TimeoutError("Marathon deployment timed out")
 
     def _container_from_module(self):
-        if "container" not in self._module.params:
-            return MarathonContainer()
+        container = {}
 
-        docker = None
-        type = "DOCKER"
-        volumes = None
+        if "container" not in self._module.params:
+            return container
 
         if "docker" in self._module.params["container"]:
-            docker = self._module.params["container"]["docker"]
+            container["docker"] = self._module.params["container"]["docker"]
 
         if "type" in self._module.params["container"]:
-            type = self._module.params["container"]["type"]
+            container["type"] = self._module.params["container"]["type"]
 
         if "volumes" in self._module.params["container"]:
-            volumes = self._module.params["container"]["volumes"]
-
-        c = MarathonContainer(docker=docker, type=type, volumes=volumes)
+            container["volumes"] = self._module.params["container"]["volumes"]
+        else:
+            container["volumes"] = []
 
         # Set service ports to 0 for easier comparison
-        for pm in c.docker.port_mappings:
-            if pm.service_port is None:
-                pm.service_port = 0
+        for key, pm in enumerate(container["docker"]["portMappings"]):
+            if "servicePort" not in pm:
+                container["docker"]["portMappings"][key]["servicePort"] = 0
 
-        return c
+        return container
 
     def _docker_container_changed(self, app, module):
-        if app.image != module.image:
+        if app["image"] != module["image"]:
             return True
 
-        if app.network != module.network:
+        if app["network"] != module["network"]:
             return True
 
-        if len(app.port_mappings) != len(module.port_mappings):
+        if len(app["portMappings"]) != len(module["portMappings"]):
             return True
 
         found = 0
 
-        for pm_module in module.port_mappings:
-            for pm_app in app.port_mappings:
+        for pm_module in module["portMappings"]:
+            for pm_app in app["portMappings"]:
                 service_port_equal = True
 
-                if (pm_module.service_port != 0 and pm_module.service_port != pm_app.service_port):
+                if (pm_module["servicePort"] != 0
+                        and pm_module["servicePort"] != pm_app["servicePort"]):
                     service_port_equal = False
 
                 if (service_port_equal
-                        and pm_module.container_port == pm_app.container_port
-                        and pm_module.host_port == pm_app.host_port
-                        and pm_module.protocol == pm_app.protocol):
+                        and pm_module["containerPort"] == pm_app["containerPort"]
+                        and pm_module["hostPort"] == pm_app["hostPort"]
+                        and pm_module["protocol"] == pm_app["protocol"]):
                     found += 1
 
-        if found != len(module.port_mappings):
+        if found != len(module["portMappings"]):
             return True
 
         return False
 
+    def _id(self):
+        if self._module.params["name"][0] == "/":
+            return self._module.params["name"]
+
+        return "/" + self._module.params["name"]
+
     def _retrieve_app(self):
-        try:
-            return self._client.get_app(self._module.params["name"])
-        except MarathonHttpError:
-            raise UnknownAppError
+        req = requests.get(self._url())
+
+        req.raise_for_status()
+
+        data = req.json()
+
+        return data["app"]
 
     def _sanitize_command(self):
         if self._module.params["command"]:
@@ -366,11 +342,31 @@ class Marathon(object):
 
         return env
 
+    def _updated_data(self):
+        return {
+            "args": self._module.params["args"],
+            "cmd": self._sanitize_command(),
+            "constraints": self._module.params["constraints"],
+            "container": self._container_from_module(),
+            "cpus": self._module.params["cpus"],
+            "id": self._id(),
+            "env": self._sanitize_env(),
+            "instances": self._module.params["instances"],
+            "mem": self._module.params["memory"]
+        }
+
+    def _url(self):
+        url = "{0}/v2/apps".format(self._module.params["host"])
+
+        if self._module.params["name"][0] != "/":
+            url += "/"
+
+        url += self._module.params["name"]
+
+        return url
+
 
 def main():
-    # Disable logger that ships with marathon package
-    marathon_logger.disabled = True
-
     module = AnsibleModule(
         argument_spec=dict(
             args=dict(default=None, type="list"),
@@ -390,16 +386,11 @@ def main():
         mutually_exclusive=(["args", "cmd"],)
     )
 
-    if HAS_MARATHON_PACKAGE is False:
-        module.fail_json("The Ansible Marathon App module requires `marathon` >= 0.6.3")
-
     try:
-        marathon_client = MarathonClient(module.params['host'])
-
-        marathon = Marathon(client=marathon_client, module=module)
+        marathon = Marathon(module=module)
 
         marathon.sync()
-    except (MarathonError, TimeoutError), e:
+    except (HTTPError, TimeoutError), e:
         module.fail_json(msg=str(e))
 
 from ansible.module_utils.basic import *
