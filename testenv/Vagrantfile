@@ -30,7 +30,7 @@ echo "ERROR" > /etc/mesos-slave/logging_level
 echo "10.10.7.10" > /etc/mesos-slave/hostname
 echo "10.10.7.10" > /etc/mesos-slave/ip
 
-apt-get -y install marathon=0.8.0-1.1.97.ubuntu1404
+apt-get -y install marathon=0.8.1-1.0.171.ubuntu1404
 
 mkdir -p /etc/marathon/conf
 
