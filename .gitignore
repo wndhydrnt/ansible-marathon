@@ -4,3 +4,5 @@
 # Vagrant
 .vagrant/
 
+# Development
+ansible/
