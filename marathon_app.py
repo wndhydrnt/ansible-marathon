@@ -435,7 +435,13 @@ def main():
         marathon = Marathon(module=module)
 
         marathon.sync()
-    except (HTTPError, TimeoutError), e:
+    except HTTPError, e:
+        raw_message = e.response.json()
+        if "message" in raw_message:
+            module.fail_json(msg=raw_message["message"])
+        else:
+            module.fail_json(msg=str(e))
+    except TimeoutError, e:
         module.fail_json(msg=str(e))
 
 from ansible.module_utils.basic import *

@@ -2,6 +2,7 @@
 
 ## 2015-03-17
 * Support `backoffFactor`, `backoffSeconds` and `maxLaunchDelaySeconds`
+* Fail with error message returned by Marathon instead of HTTP header
 
 ## 2015-03-07
 
