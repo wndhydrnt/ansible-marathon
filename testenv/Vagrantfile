@@ -36,6 +36,9 @@ mkdir -p /etc/marathon/conf
 
 echo "1200000" > /etc/marathon/conf/task_launch_timeout
 
+echo "if $programname == 'marathon' then /tmp/marathon.log" > /etc/rsyslog.d/40-marathon.conf
+
+service rsyslog restart
 service zookeeper restart
 service mesos-master restart
 service mesos-slave restart

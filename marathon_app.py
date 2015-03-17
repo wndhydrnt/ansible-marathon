@@ -16,6 +16,15 @@ options:
   args:
     description:
       - List of arguments passed to a task
+    required: false
+    default: null
+    aliases: []
+  backoff_seconds:
+    description:
+      - Time Marathon waits until it tries to run a previously failing task.
+    required: false
+    default: 1
+    aliases: []
   cpus:
     description:
       - Set number of CPUs to allocate for one container
@@ -64,6 +73,12 @@ options:
     required: False
     default: 1
     aliases: []
+  max_launch_delay_seconds:
+    description:
+      - Time until a deployment is considered failed.
+    required: False
+    default: 3600
+    aliases: []
   memory:
     description:
       - Set how much memory to assign to an instance.
@@ -99,6 +114,7 @@ EXAMPLES = """
 # Run a command in a container (note that the execution is delegated to localhost):
 
 - hosts: localhost
+  connection: local
   gather_facts: no
   sudo: no
   tasks:
@@ -116,6 +132,7 @@ EXAMPLES = """
 # Run the Docker Registry inside a docker container and expose its HTTP port:
 
 - hosts: localhost
+  connection: local
   gather_facts: no
   sudo: no
   tasks:
@@ -188,11 +205,14 @@ class Marathon(object):
                        and app["args"] != self._module.params["args"])
 
         if (args_update
+                or app["backoffFactor"] != self._module.params["backoff_factor"]
+                or app["backoffSeconds"] != self._module.params["backoff_seconds"]
                 or app["cmd"] != self._sanitize_command()
                 or app["cpus"] != self._module.params["cpus"]
                 or app["env"] != self._sanitize_env()
                 or app["healthChecks"] != self._module.params["health_checks"]
                 or app["instances"] != self._module.params["instances"]
+                or app["maxLaunchDelaySeconds"] != self._module.params["max_launch_delay_seconds"]
                 or app["mem"] != self._module.params["memory"]):
             return True
 
@@ -282,10 +302,11 @@ class Marathon(object):
         else:
             container["volumes"] = []
 
-        # Set service ports to 0 for easier comparison
-        for key, pm in enumerate(container["docker"]["portMappings"]):
-            if "servicePort" not in pm:
-                container["docker"]["portMappings"][key]["servicePort"] = 0
+        if "portMappings" in container["docker"]:
+            # Set service ports to 0 for easier comparison
+            for key, pm in enumerate(container["docker"]["portMappings"]):
+                if "servicePort" not in pm:
+                    container["docker"]["portMappings"][key]["servicePort"] = 0
 
         return container
 
@@ -293,7 +314,16 @@ class Marathon(object):
         if app["image"] != module["image"]:
             return True
 
-        if app["network"] != module["network"]:
+        if ("network" not in app and "network" in module) \
+                or ("network" in app and "network" not in module):
+            return True
+
+        if "network" in app and "network" in module \
+                and app["network"] != module["network"]:
+            return True
+
+        if ("portMappings" in app and "portMappings" not in module) \
+                or ("portMappings" not in app and "portMappings" in module):
             return True
 
         if len(app["portMappings"]) != len(module["portMappings"]):
@@ -352,6 +382,8 @@ class Marathon(object):
     def _updated_data(self):
         return {
             "args": self._module.params["args"],
+            "backoffFactor": self._module.params["backoff_factor"],
+            "backoffSeconds": self._module.params["backoff_seconds"],
             "cmd": self._sanitize_command(),
             "constraints": self._module.params["constraints"],
             "container": self._container_from_module(),
@@ -360,6 +392,7 @@ class Marathon(object):
             "env": self._sanitize_env(),
             "healthChecks": self._module.params["health_checks"],
             "instances": self._module.params["instances"],
+            "maxLaunchDelaySeconds": self._module.params["max_launch_delay_seconds"],
             "mem": self._module.params["memory"]
         }
 
@@ -378,6 +411,8 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             args=dict(default=None, type="list"),
+            backoff_factor=dict(default=1.15, type="float"),
+            backoff_seconds=dict(default=1, type="int"),
             cpus=dict(default=1.0, type="float"),
             command=dict(default=None, type="str"),
             constraints=dict(default=None, type="list"),
@@ -386,6 +421,7 @@ def main():
             health_checks=dict(default=list(), type="list"),
             host=dict(default="http://localhost:8080", type="str"),
             instances=dict(default=1, type="int"),
+            max_launch_delay_seconds=dict(default=3600, type="int"),
             memory=dict(default=256.0, type="float"),
             name=dict(required=True, type="str"),
             state=dict(default="present", choices=["absent", "present"], type="str"),

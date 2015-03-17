@@ -1,8 +1,11 @@
 # Changelog
 
+## 2015-03-17
+* Support `backoffFactor`, `backoffSeconds` and `maxLaunchDelaySeconds`
+
 ## 2015-03-07
 
-* Support health checks
+* Support `healthChecks`
 
 ## 2014-12-12
 
