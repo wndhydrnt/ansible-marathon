@@ -154,7 +154,7 @@ class Marathon(object):
                               constraints=self._module.params["constraints"],
                               container=self._module.params["container"],
                               cpus=self._module.params["cpus"],
-                              env=self._module.params["env"],
+                              env=self._sanitize_env(),
                               instances=self._module.params["instances"],
                               mem=self._module.params["memory"])
 
