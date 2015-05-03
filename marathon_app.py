@@ -335,6 +335,11 @@ class Marathon(object):
             for pm_app in app["portMappings"]:
                 service_port_equal = True
 
+                if (pm_module["servicePort"] == 0
+                    and (pm_app["servicePort"] < self._module.params["local_port_min"]
+                         or pm_app["servicePort"] > self._module.params["local_port_max"])):
+                    service_port_equal = False
+
                 if (pm_module["servicePort"] != 0
                         and pm_module["servicePort"] != pm_app["servicePort"]):
                     service_port_equal = False
@@ -421,6 +426,8 @@ def main():
             health_checks=dict(default=list(), type="list"),
             host=dict(default="http://localhost:8080", type="str"),
             instances=dict(default=1, type="int"),
+            local_port_max=dict(default=20000, type="int"),
+            local_port_min=dict(default=10000, type="int"),
             max_launch_delay_seconds=dict(default=3600, type="int"),
             memory=dict(default=256.0, type="float"),
             name=dict(required=True, type="str"),

@@ -1,6 +1,11 @@
 # Changelog
 
+## 2015-05-03
+
+* Fix application not being updated if a `servicePort` is removed
+
 ## 2015-03-17
+
 * Support `backoffFactor`, `backoffSeconds` and `maxLaunchDelaySeconds`
 * Fail with error message returned by Marathon instead of HTTP header
 
