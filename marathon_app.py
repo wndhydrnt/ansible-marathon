@@ -67,6 +67,12 @@ options:
     required: False
     default: http://localhost:8080
     aliases: []
+  labels:
+    description:
+      - Add labels to the application.
+    required: False
+    default: dict
+    aliases: []
   instances:
     description:
       - Set the number of instances to spawn.
@@ -174,7 +180,9 @@ class Marathon(object):
                             headers={"Content-Type": "application/json"})
         rep.raise_for_status()
 
-        self._check_deployment()
+        data = rep.json()
+
+        self._check_deployment(data["deployments"][0]["id"])
 
     def delete(self):
         rep = requests.delete(self._url())
@@ -212,6 +220,7 @@ class Marathon(object):
                 or app["env"] != self._sanitize_env()
                 or app["healthChecks"] != self._module.params["health_checks"]
                 or app["instances"] != self._module.params["instances"]
+                or app["labels"] != self._module.params["labels"]
                 or app["maxLaunchDelaySeconds"] != self._module.params["max_launch_delay_seconds"]
                 or app["mem"] != self._module.params["memory"]):
             return True
@@ -266,9 +275,11 @@ class Marathon(object):
                            headers={"Content-Type": "application/json"})
         rep.raise_for_status()
 
-        self._check_deployment(previous_version)
+        data = rep.json()
 
-    def _check_deployment(self, previous_version=None):
+        self._check_deployment(data["deploymentId"])
+
+    def _check_deployment(self, deployment_id):
         if self._module.params["wait"] is False:
             return
 
@@ -276,11 +287,19 @@ class Marathon(object):
 
         while int(time.time()) < timeout:
             time.sleep(5)
-            app = self._retrieve_app()
-            # Make sure all tasks are running
-            if (previous_version != app["version"]
-                    and app["tasksRunning"] == self._module.params["instances"]
-                    and app["tasksStaged"] == 0):
+            url = "{0}/v2/deployments".format(self._module.params["host"])
+            rep = requests.get(url)
+            rep.raise_for_status()
+
+            data = rep.json()
+
+            found = False
+
+            for _, deployment in enumerate(data):
+                if deployment["id"] == deployment_id:
+                    found = True
+
+            if found is False:
                 return
 
         raise TimeoutError("Marathon deployment timed out")
@@ -396,6 +415,7 @@ class Marathon(object):
             "id": self._id(),
             "env": self._sanitize_env(),
             "healthChecks": self._module.params["health_checks"],
+            "labels": self._module.params["labels"],
             "instances": self._module.params["instances"],
             "maxLaunchDelaySeconds": self._module.params["max_launch_delay_seconds"],
             "mem": self._module.params["memory"]
@@ -426,6 +446,7 @@ def main():
             health_checks=dict(default=list(), type="list"),
             host=dict(default="http://localhost:8080", type="str"),
             instances=dict(default=1, type="int"),
+            labels=dict(default=None, type="dict"),
             local_port_max=dict(default=20000, type="int"),
             local_port_min=dict(default=10000, type="int"),
             max_launch_delay_seconds=dict(default=3600, type="int"),

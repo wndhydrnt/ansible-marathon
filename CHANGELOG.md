@@ -1,5 +1,10 @@
 # Changelog
 
+## 2015-08-07
+
+* Support `labels`
+* Use the deployment ID to determine that a deployment has finished 
+
 ## 2015-05-03
 
 * Fix application not being updated if a `servicePort` is removed
