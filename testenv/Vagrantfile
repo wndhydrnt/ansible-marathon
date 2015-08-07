@@ -4,6 +4,9 @@
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 
+MARATHON_VERSION = ENV.fetch('MARATHON_VERSION', '')
+MESOS_VERSION = ENV.fetch('MESOS_VERSION', '')
+
 $script = <<SCRIPT
 # Setup
 apt-key adv --keyserver keyserver.ubuntu.com --recv E56151BF
@@ -20,7 +23,7 @@ apt-get -y update
 
 apt-get -y install apt-transport-https lxc-docker
 
-apt-get -y install mesos=0.21.1-1.1.ubuntu1404
+apt-get -y install mesos="#{MESOS_VERSION}"
 
 echo "10.10.7.10" > /etc/mesos-master/ip
 
@@ -30,7 +33,7 @@ echo "ERROR" > /etc/mesos-slave/logging_level
 echo "10.10.7.10" > /etc/mesos-slave/hostname
 echo "10.10.7.10" > /etc/mesos-slave/ip
 
-apt-get -y install marathon=0.8.1-1.0.171.ubuntu1404
+apt-get -y install marathon="#{MARATHON_VERSION}"
 
 mkdir -p /etc/marathon/conf
 

@@ -1,0 +1,30 @@
+---
+
+- hosts: 127.0.0.1
+  connection: local
+  gather_facts: no
+  sudo: no
+  tasks:
+    - name: test marathon
+      marathon_app:
+        state: present
+        name: multiple-instances
+        host: http://10.10.7.10:8080
+        memory: 128.0
+        instances: 2
+        container:
+          type: DOCKER
+          docker:
+            image: redis:latest
+            network: BRIDGE
+            portMappings:
+              - containerPort: 6379
+                hostPort: 0
+                protocol: tcp
+        health_checks:
+          - protocol: TCP
+            gracePeriodSeconds: 3
+            intervalSeconds: 10
+            portIndex: 0
+            timeoutSeconds: 10
+            maxConsecutiveFailures: 3

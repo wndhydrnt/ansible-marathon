@@ -8,20 +8,27 @@
     - name: test marathon
       marathon_app:
         state: present
-        name: docker-registry
+        name: simple-app
         host: http://10.10.7.10:8080
         memory: 128.0
         instances: 1
         container:
           type: DOCKER
           docker:
-            image: registry:0.8.1
+            image: nginx:latest
             network: BRIDGE
             portMappings:
-              - { containerPort: 5000, hostPort: 0, protocol: "tcp" }
+              - containerPort: 80
+                hostPort: 0
+                protocol: "tcp"
         env:
           SETTINGS_FLAVOR: local
           SEARCH_BACKEND: sqlalchemy
-      register: marathon
-
-    - debug: var=marathon
+        health_checks:
+          - protocol: HTTP
+            path: "/"
+            gracePeriodSeconds: 3
+            intervalSeconds: 10
+            portIndex: 0
+            timeoutSeconds: 10
+            maxConsecutiveFailures: 3
