@@ -156,7 +156,8 @@ class Marathon(object):
                               cpus=self._module.params["cpus"],
                               env=self._sanitize_env(),
                               instances=self._module.params["instances"],
-                              mem=self._module.params["memory"])
+                              mem=self._module.params["memory"],
+                              uris=self._module.params["uris"] or [])
 
         self._client.create_app(self._module.params["name"], new_app)
 
@@ -226,6 +227,10 @@ class Marathon(object):
         if module_constraints != app_constraints:
             return True
 
+        module_uris = self._module.params["uris"] or []
+        if module_uris != app.uris:
+            return True
+
         return False
 
     def sync(self):
@@ -261,6 +266,7 @@ class Marathon(object):
         app.env = self._sanitize_env()
         app.instances = self._module.params["instances"]
         app.mem = self._module.params["memory"]
+        app.uris = self._module.params["uris"] or []
 
         app.container = self._container_from_module()
 
@@ -384,6 +390,7 @@ def main():
             memory=dict(default=256.0, type="float"),
             name=dict(required=True, type="str"),
             state=dict(default="present", choices=["absent", "present"], type="str"),
+            uris=dict(default=None, type="list"),
             wait=dict(default="yes", choices=BOOLEANS, type="bool"),
             wait_timeout=dict(default=300, type="int")
         ),
