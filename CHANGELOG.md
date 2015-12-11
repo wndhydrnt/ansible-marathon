@@ -3,6 +3,7 @@
 ## 2015-12-11
 
 * Support `uris`
+* Fix new deployments being triggered on every synchronisation
 
 ## 2015-08-07
 

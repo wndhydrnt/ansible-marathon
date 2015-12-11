@@ -208,15 +208,11 @@ class Marathon(object):
         return app
 
     def needs_update(self, app):
-        args_update = ((app["args"] != []
-                        or self._module.params["args"] is not None)
-                       and app["args"] != self._module.params["args"])
-
         app["uris"].sort()
         module_uris = self._module.params["uris"] or []
         module_uris.sort()
 
-        if (args_update
+        if (self._args_changed(app, self._module)
                 or app["backoffFactor"] != self._module.params["backoff_factor"]
                 or app["backoffSeconds"] != self._module.params["backoff_seconds"]
                 or app["cmd"] != self._sanitize_command()
@@ -333,6 +329,15 @@ class Marathon(object):
                     container["docker"]["portMappings"][key]["servicePort"] = 0
 
         return container
+
+    def _args_changed(self, app, module):
+        app_args = app["args"] or []
+        module_args = module.params["args"] or []
+
+        app_args.sort()
+        module_args.sort()
+
+        return app_args != module_args
 
     def _docker_container_changed(self, app, module):
         if app["image"] != module["image"]:

@@ -69,3 +69,17 @@ def step_impl(context, number, application_id):
 
     if c != int(number):
         raise RuntimeError("Marathon did not start application with id '" + application_id + "'")
+
+
+@then(u'only one version of app "{application_id}" exists')
+def step_impl(context, application_id):
+    rep = requests.get("http://10.10.7.10:8080/v2/apps/" + application_id +
+                       "/versions",
+                       headers={"Accept": "application/json"})
+
+    data = rep.json()
+
+    version_count = len(data["versions"])
+    if version_count != 1:
+        raise RuntimeError("Expected one version of app {0} but found {1}"
+                           .format(application_id, version_count))
