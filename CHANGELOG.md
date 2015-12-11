@@ -4,6 +4,7 @@
 
 * Support `uris`
 * Fix new deployments being triggered on every synchronisation
+* Fix deployment being triggered when no labels are set 
 
 ## 2015-08-07
 

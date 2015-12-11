@@ -218,9 +218,9 @@ class Marathon(object):
                 or app["cmd"] != self._sanitize_command()
                 or app["cpus"] != self._module.params["cpus"]
                 or app["env"] != self._sanitize_env()
-                or app["healthChecks"] != self._module.params["health_checks"]
+                or app["healthChecks"] != (self._module.params["health_checks"] or [])
                 or app["instances"] != self._module.params["instances"]
-                or app["labels"] != self._module.params["labels"]
+                or app["labels"] != (self._module.params["labels"] or {})
                 or app["maxLaunchDelaySeconds"] != self._module.params["max_launch_delay_seconds"]
                 or app["mem"] != self._module.params["memory"]
                 or app["uris"] != module_uris):
