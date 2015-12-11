@@ -212,6 +212,10 @@ class Marathon(object):
                         or self._module.params["args"] is not None)
                        and app["args"] != self._module.params["args"])
 
+        app["uris"].sort()
+        module_uris = self._module.params["uris"] or []
+        module_uris.sort()
+
         if (args_update
                 or app["backoffFactor"] != self._module.params["backoff_factor"]
                 or app["backoffSeconds"] != self._module.params["backoff_seconds"]
@@ -222,7 +226,8 @@ class Marathon(object):
                 or app["instances"] != self._module.params["instances"]
                 or app["labels"] != self._module.params["labels"]
                 or app["maxLaunchDelaySeconds"] != self._module.params["max_launch_delay_seconds"]
-                or app["mem"] != self._module.params["memory"]):
+                or app["mem"] != self._module.params["memory"]
+                or app["uris"] != module_uris):
             return True
 
         new_container = self._container_from_module()
@@ -418,7 +423,8 @@ class Marathon(object):
             "labels": self._module.params["labels"],
             "instances": self._module.params["instances"],
             "maxLaunchDelaySeconds": self._module.params["max_launch_delay_seconds"],
-            "mem": self._module.params["memory"]
+            "mem": self._module.params["memory"],
+            "uris": self._module.params["uris"] or []
         }
 
     def _url(self):
@@ -453,6 +459,7 @@ def main():
             memory=dict(default=256.0, type="float"),
             name=dict(required=True, type="str"),
             state=dict(default="present", choices=["absent", "present"], type="str"),
+            uris=dict(default=None, type="list"),
             wait=dict(default="yes", choices=BOOLEANS, type="bool"),
             wait_timeout=dict(default=300, type="int")
         ),

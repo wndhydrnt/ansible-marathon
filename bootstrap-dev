@@ -5,4 +5,4 @@ if [ ! -d ./ansible ]; then
 fi
 cd ./ansible
 git fetch
-git checkout v1.9.2-1
+git checkout v1.9.4-1

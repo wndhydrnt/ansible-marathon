@@ -10,8 +10,8 @@ import time
 from behave import *
 
 
-default_marathon_version = "0.8.2-1.0.306.ubuntu1404"
-default_mesos_version = "0.22.1-1.0.ubuntu1404"
+default_marathon_version = "0.10.1-1.0.416.ubuntu1404"
+default_mesos_version = "0.22.2-0.2.62.ubuntu1404"
 
 
 @given(u'a running Marathon environment')

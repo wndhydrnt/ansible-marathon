@@ -1,5 +1,9 @@
 # Changelog
 
+## 2015-12-11
+
+* Support `uris`
+
 ## 2015-08-07
 
 * Support `labels`
