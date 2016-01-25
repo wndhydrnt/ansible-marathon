@@ -351,11 +351,10 @@ class Marathon(object):
                 and app["network"] != module["network"]:
             return True
 
-        if ("portMappings" in app and "portMappings" not in module) \
-                or ("portMappings" not in app and "portMappings" in module):
-            return True
+        app_port_mappings = app["portMappings"] if "portMappings" in app else []
+        module_port_mappings = module["portMappings"] if "portMappings" in module else []
 
-        if len(app["portMappings"]) != len(module["portMappings"]):
+        if len(app_port_mappings) != len(module_port_mappings):
             return True
 
         found = 0
