@@ -1,5 +1,9 @@
 # Changelog
 
+## 2015-01-25
+
+* Fix app being flagged as 'changed' when using HOST networking
+
 ## 2015-12-11
 
 * Support `uris`
