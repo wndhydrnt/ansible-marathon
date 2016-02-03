@@ -1,6 +1,10 @@
 # Changelog
 
-## 2015-01-25
+## 2016-02-03
+
+* Support `ports`
+
+## 2016-01-25
 
 * Fix app being flagged as 'changed' when using HOST networking
 

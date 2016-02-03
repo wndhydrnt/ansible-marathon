@@ -97,6 +97,12 @@ options:
     required: True
     default: null
     aliases: []
+  ports:
+    description:
+      - Set ports of the application
+    required: False
+    default: null
+    aliases: []
   state:
     description:
       - Indicate desired state of the target.
@@ -224,6 +230,9 @@ class Marathon(object):
                 or app["maxLaunchDelaySeconds"] != self._module.params["max_launch_delay_seconds"]
                 or app["mem"] != self._module.params["memory"]
                 or app["uris"] != module_uris):
+            return True
+
+        if self._ports_changed(app, self._module):
             return True
 
         new_container = self._container_from_module()
@@ -428,6 +437,7 @@ class Marathon(object):
             "instances": self._module.params["instances"],
             "maxLaunchDelaySeconds": self._module.params["max_launch_delay_seconds"],
             "mem": self._module.params["memory"],
+            "ports": self._module.params["ports"] or [],
             "uris": self._module.params["uris"] or []
         }
 
@@ -440,6 +450,21 @@ class Marathon(object):
         url += self._module.params["name"]
 
         return url
+
+    def _ports_changed(self, app, module):
+        module_ports = module.params["ports"]
+
+        # Ignore ports if module does not define any. Marathon will choose the ports randomly in
+        # this case.
+        if len(module_ports) == 0:
+            return False
+
+        module_ports.sort()
+
+        app_ports = app['ports']
+        app_ports.sort()
+
+        return app_ports != module_ports
 
 
 def main():
@@ -463,6 +488,7 @@ def main():
             memory=dict(default=256.0, type="float"),
             name=dict(required=True, type="str"),
             state=dict(default="present", choices=["absent", "present"], type="str"),
+            ports=dict(default=None, type="list"),
             uris=dict(default=None, type="list"),
             wait=dict(default="yes", choices=BOOLEANS, type="bool"),
             wait_timeout=dict(default=300, type="int")
