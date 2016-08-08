@@ -382,6 +382,7 @@ class Marathon(object):
                     service_port_equal = False
 
                 if (service_port_equal
+                        and pm_module["labels"] == pm_app["labels"]
                         and pm_module["containerPort"] == pm_app["containerPort"]
                         and pm_module["hostPort"] == pm_app["hostPort"]
                         and pm_module["protocol"] == pm_app["protocol"]):
