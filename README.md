@@ -5,4 +5,4 @@ Manage [Marathon](https://github.com/mesosphere/marathon) applications with
 
 ## Compatibility
 
-ansible-marathon is compatible with Marathon 0.8.0.
+ansible-marathon is compatible with Marathon 1.3.1.
