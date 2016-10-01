@@ -1,5 +1,9 @@
 # Changelog
 
+## 2016-10-01
+
+* Support `docker.portMappings.labels`
+
 ## 2016-02-03
 
 * Support `ports`
@@ -12,12 +16,12 @@
 
 * Support `uris`
 * Fix new deployments being triggered on every synchronisation
-* Fix deployment being triggered when no labels are set 
+* Fix deployment being triggered when no labels are set
 
 ## 2015-08-07
 
 * Support `labels`
-* Use the deployment ID to determine that a deployment has finished 
+* Use the deployment ID to determine that a deployment has finished
 
 ## 2015-05-03
 
