@@ -1,2 +1,5 @@
 behave
+docker-compose
+Jinja2
+MarkupSafe
 requests

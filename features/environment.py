@@ -9,10 +9,12 @@ def before_all(context):
     ip = os.environ.get('BEHAVE_IP', '127.0.0.1')
 
     if ip == '127.0.0.1':
-        docker_compose_cmd = 'BEHAVE_IP=127.0.0.1 docker-compose up -d"'
+        docker_compose_cmd = 'BEHAVE_IP=127.0.0.1 docker-compose up -d'
     else:
         try:
-            subprocess.check_output(['vagrant up'], shell=True, stderr=subprocess.STDOUT)
+            p = subprocess.Popen('vagrant up', shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            for line in iter(p.stdout.readline, ""):
+                sys.stdout.write(line)
         except subprocess.CalledProcessError as e:
             sys.stdout.write(e.output)
             raise
@@ -20,7 +22,9 @@ def before_all(context):
         docker_compose_cmd = 'vagrant ssh -c "cd /vagrant && sudo BEHAVE_IP={0} docker-compose up -d"'.format(ip)
 
     try:
-        subprocess.check_output([docker_compose_cmd], shell=True, stderr=subprocess.STDOUT)
+        vagrant_up = subprocess.Popen(docker_compose_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        for line in iter(vagrant_up.stdout.readline, ""):
+            sys.stdout.write(line)
     except subprocess.CalledProcessError as e:
         sys.stdout.write(e.output)
         raise

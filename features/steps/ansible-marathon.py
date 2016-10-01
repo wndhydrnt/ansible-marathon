@@ -12,8 +12,8 @@ from behave import *
 
 @when(u'starting the application "{playbook}"')
 def step_impl(context, playbook):
-    cmd = "source ./ansible/hacking/env-setup && cd ./testenv && ansible-playbook -i inventory " \
-          "--module-path=../ " + playbook
+    cmd = "/bin/bash -c 'source ./ansible/hacking/env-setup && cd ./testenv && ansible-playbook -i inventory " \
+          "--module-path=../ " + playbook + "'"
 
     try:
         subprocess.check_output([cmd], shell=True, stderr=subprocess.STDOUT)
@@ -43,7 +43,8 @@ def step_impl(context, number, application_id):
 
 @then(u'only one version of app "{application_id}" exists')
 def step_impl(context, application_id):
-    rep = requests.get("http://10.10.7.10:8080/v2/apps/" + application_id +
+    ip = os.environ.get('BEHAVE_IP', '127.0.0.1')
+    rep = requests.get("http://" + ip + ":8080/v2/apps/" + application_id +
                        "/versions",
                        headers={"Accept": "application/json"})
 

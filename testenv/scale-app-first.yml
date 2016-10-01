@@ -9,7 +9,7 @@
       marathon_app:
         state: present
         name: scale-app
-        host: http://10.10.7.10:8080
+        host: "http://{{ lookup('env','BEHAVE_IP') }}:8080"
         memory: 128.0
         instances: 1
         container:

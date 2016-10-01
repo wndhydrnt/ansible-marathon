@@ -5,7 +5,4 @@ services:
 
 language: python
 
-install:
-  - pip install behave docker-compose requests
-
 script: make behave
