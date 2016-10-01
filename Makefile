@@ -3,7 +3,7 @@ behave: bootstrap
 	if [ `uname` = "Linux" ]; then BEHAVE_IP=127.0.0.1 behave; fi
 
 bootstrap:
-	if [ ! -d ./ansible ]; then git clone git@github.com:ansible/ansible.git ./ansible; fi
+	if [ ! -d ./ansible ]; then git clone https://github.com/ansible/ansible.git ./ansible; fi
 	cd ./ansible && git pull
 
 test_module:
