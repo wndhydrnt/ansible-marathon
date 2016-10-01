@@ -1,0 +1,11 @@
+sudo: required
+
+services:
+  - docker
+
+language: python
+
+install:
+  - pip install docker-compose
+
+script: make behave
