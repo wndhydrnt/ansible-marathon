@@ -6,6 +6,6 @@ services:
 language: python
 
 install:
-  - pip install docker-compose
+  - pip install behave docker-compose requests
 
 script: make behave
