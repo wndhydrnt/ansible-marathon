@@ -381,6 +381,9 @@ class Marathon(object):
                         and pm_module["servicePort"] != pm_app["servicePort"]):
                     service_port_equal = False
 
+                if "labels" not in pm_module:
+                    pm_module["labels"] = {}
+
                 if (service_port_equal
                         and pm_module["labels"] == pm_app["labels"]
                         and pm_module["containerPort"] == pm_app["containerPort"]
@@ -457,7 +460,7 @@ class Marathon(object):
 
         # Ignore ports if module does not define any. Marathon will choose the ports randomly in
         # this case.
-        if len(module_ports) == 0:
+        if module_ports is None or len(module_ports) == 0:
             return False
 
         module_ports.sort()
